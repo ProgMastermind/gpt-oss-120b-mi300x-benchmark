@@ -6,8 +6,23 @@ set -e
 
 echo "Installing vLLM 0.24.0 for ROCm..."
 
-# ROCm 7.2.3 variant is the current wheel for vLLM 0.24.0; it works on rocm7.2.4 too.
-pip install vllm==0.24.0+rocm723 --extra-index-url https://wheels.vllm.ai/rocm/0.24.0/rocm723
+# Pin torch/torchvision/torchaudio to the official ROCm 7.2 builds so the
+# vllm wheel does not pull a non-ROCm or mismatched torch from its own index.
+TMPDIR=$(mktemp -d)
+cat > "$TMPDIR/vllm_constraints.txt" <<EOF
+torch==2.11.0+rocm7.2
+torchvision==0.26.0+rocm7.2
+torchaudio==2.11.0+rocm7.2
+EOF
+
+pip install vllm==0.24.0+rocm723 \
+  --extra-index-url https://wheels.vllm.ai/rocm/0.24.0/rocm723 \
+  --extra-index-url https://download.pytorch.org/whl/rocm7.2 \
+  -c "$TMPDIR/vllm_constraints.txt"
+
+# If atom is also installed in this venv, disable its vLLM plugin to avoid
+# loading a newer AITER than the vllm wheel expects.
+export ATOM_DISABLE_VLLM_PLUGIN=1
 
 echo "Verifying installation..."
 vllm --version

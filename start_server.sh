@@ -12,6 +12,9 @@ export SAFETENSORS_FAST_GPU=1
 export TORCH_BLAS_PREFER_HIPBLASLT=1
 export HIP_FORCE_DEV_KERNARG=1
 
+# If atom is installed in the same venv, disable its vLLM plugin.
+export ATOM_DISABLE_VLLM_PLUGIN=1
+
 mkdir -p /workspace/.cache/huggingface
 
 echo "Starting vLLM server for openai/gpt-oss-120b on port 8000..."
