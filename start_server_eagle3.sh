@@ -30,4 +30,4 @@ vllm serve openai/gpt-oss-120b \
   --max-model-len 12000 \
   --max-num-seqs 256 \
   --compilation-config '{"cudagraph_mode": "FULL_AND_PIECEWISE"}' \
-  --speculative-config '{"method": "eagle3", "model": "RedHatAI/gpt-oss-120b-speculator.eagle3", "num_speculative_tokens": 5, "draft_tensor_parallel_size": 1}'
+  --speculative-config '{"method": "eagle3", "model": "RedHatAI/gpt-oss-120b-speculator.eagle3", "num_speculative_tokens": 2, "draft_tensor_parallel_size": 1}'
