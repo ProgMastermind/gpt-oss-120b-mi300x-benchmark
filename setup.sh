@@ -6,7 +6,8 @@ set -e
 
 echo "Installing vLLM 0.24.0 for ROCm..."
 
-pip install vllm==0.24.0+rocm721 --extra-index-url https://wheels.vllm.ai/rocm/0.24.0/rocm721
+# ROCm 7.2.3 variant is the current wheel for vLLM 0.24.0; it works on rocm7.2.4 too.
+pip install vllm==0.24.0+rocm723 --extra-index-url https://wheels.vllm.ai/rocm/0.24.0/rocm723
 
 echo "Verifying installation..."
 vllm --version
