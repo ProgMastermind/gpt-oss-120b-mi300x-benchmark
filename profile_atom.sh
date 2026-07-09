@@ -48,6 +48,7 @@ python -m atom.entrypoints.openai_server \
   --host 0.0.0.0 \
   --server-port 8000 \
   --torch-profiler-dir "$PROFILE_DIR" \
+  --mark-trace \
   > "$ATOM_LOG" 2>&1 &
 
 SERVER_PID=$!
