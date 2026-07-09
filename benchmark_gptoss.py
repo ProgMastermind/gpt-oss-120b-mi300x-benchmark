@@ -5,8 +5,12 @@ Workload: 10K input tokens / 1.5K output tokens (matches Artificial Analysis).
 Method: Single-stream decode throughput, excluding TTFT.
 
 Usage:
-    1. Start the vLLM server on port 8000
+    1. Start the vLLM/ATOM server on port 8000
     2. Run: python benchmark_gptoss.py
+
+Environment variables:
+    - BENCHMARK_URL:  OpenAI completions endpoint (default: http://localhost:8000/v1/completions)
+    - BENCHMARK_MODEL: model name to send in requests (default: openai/gpt-oss-120b)
 
 Notes:
     - Uses the OpenAI streaming completions API to accurately measure TTFT.
@@ -15,13 +19,14 @@ Notes:
     - One warmup request is run first to avoid JIT compilation skew.
 """
 
+import os
 import requests
 import time
 import json
 import sys
 
-URL = "http://localhost:8000/v1/completions"
-MODEL = "openai/gpt-oss-120b"
+URL = os.environ.get("BENCHMARK_URL", "http://localhost:8000/v1/completions")
+MODEL = os.environ.get("BENCHMARK_MODEL", "openai/gpt-oss-120b")
 
 # Base text (~70 tokens per repeat). 143 repeats gives ~10,000 tokens.
 BASE_TEXT = (

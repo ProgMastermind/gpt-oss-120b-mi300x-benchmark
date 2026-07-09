@@ -1,16 +1,18 @@
 # RunPod Template for gpt-oss-120b on MI300X
 
-## Option A: Official vLLM ROCm Image (Recommended)
+## Option A: Official ATOM ROCm Image (Recommended)
 
 | Field | Value |
 |-------|-------|
-| Container image | `vllm/vllm-openai-rocm:v0.24.0` |
+| Container image | `rocm/atom:latest` |
 | Container start command (JSON) | `{"entrypoint": ["/bin/bash"], "cmd": ["-c", "sleep infinity"]}` |
 | Container disk | 50 GB |
 | Volume disk | 150 GB |
 | Volume mount path | `/workspace` |
 | Expose HTTP ports | `8000` |
 | Expose TCP ports | `22` |
+
+ATOM is pre-installed and the `python -m atom.entrypoints.openai_server` command is available.
 
 ## Option B: ROCm PyTorch Base Image
 
@@ -24,16 +26,27 @@
 | Expose HTTP ports | `8000` |
 | Expose TCP ports | `22` |
 
-For Option B, run `setup.sh` after connecting to install vLLM.
+For Option B, run `setup_atom.sh` after connecting to install ATOM from source.
+
+## Option C: Legacy vLLM ROCm Image
+
+| Field | Value |
+|-------|-------|
+| Container image | `vllm/vllm-openai-rocm:v0.24.0` |
+| Container start command (JSON) | `{"entrypoint": ["/bin/bash"], "cmd": ["-c", "sleep infinity"]}` |
+| Container disk | 50 GB |
+| Volume disk | 150 GB |
+| Volume mount path | `/workspace` |
+| Expose HTTP ports | `8000` |
+| Expose TCP ports | `22` |
+
+For Option C, the vLLM scripts `setup.sh`, `start_server.sh` and `start_server_eagle3*.sh` can be used.
 
 ## Environment Variables
 
 ```
-VLLM_ROCM_USE_AITER=1
-VLLM_USE_AITER_UNIFIED_ATTENTION=1
-VLLM_ROCM_USE_AITER_MHA=0
-AMDGCN_USE_BUFFER_OPS=0
 HSA_NO_SCRATCH_RECLAIM=1
+AMDGCN_USE_BUFFER_OPS=0
 HF_HOME=/workspace/.cache/huggingface
 SAFETENSORS_FAST_GPU=1
 HF_TOKEN=hf_your_token_here
