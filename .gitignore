@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.json
+results/
+models/
+.cache/
+.huggingface/
+*.safetensors
+*.bin
