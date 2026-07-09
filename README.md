@@ -7,8 +7,11 @@ This repo contains scripts to run and benchmark `openai/gpt-oss-120b` on a singl
 | File | Purpose |
 |------|---------|
 | `start_server.sh` | Start the vLLM server on port 8000 |
+| `start_server_eagle3.sh` | Start vLLM server with Eagle 3 speculative decoding |
 | `setup.sh` | Install vLLM on a ROCm PyTorch base image (Option B) |
-| `benchmark_gptoss.py` | Benchmark 10K input / 1.5K output single-stream decode |
+| `benchmark_gptoss.py` | Benchmark 10K input / 1.5K output using raw completions |
+| `benchmark_wafer.py` | Non-streaming benchmark using raw completions |
+| `benchmark_chat.py` | Benchmark 10K input / 1.5K output using chat completions (better for Eagle 3) |
 | `runpod_template.md` | Exact RunPod template configuration |
 
 ## Quick Start on RunPod
@@ -54,4 +57,4 @@ The benchmark matches the Artificial Analysis single-stream workload:
 - **Expected single-stream throughput on 1x MI300X:** ~70-100 tok/s without speculative decoding. Chinmay Hebbal's MI300X benchmark reports ~63 tok/s per stream for gpt-oss-120b. Fireworks' 746 tok/s uses Eagle 3 speculative decoding + custom CUDA kernels, which is **not available on AMD/ROCm for gpt-oss-120b**.
 - `FP8 KV cache` is not recommended for gpt-oss due to sliding-window attention layers.
 - First model download is ~63GB and may take 10-30 minutes.
-- The optimized config uses `ROCM_AITER_FA`, `FULL_DECODE_ONLY` CUDA graphs, and disables chunked prefill for better single-GPU decode performance.
+- `benchmark_chat.py` uses the chat completions API and a natural prompt. This may give better Eagle 3 acceptance rates than raw completions.
