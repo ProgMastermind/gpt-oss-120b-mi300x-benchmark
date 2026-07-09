@@ -26,6 +26,6 @@ vllm serve openai/gpt-oss-120b \
   --gpu-memory-utilization 0.85 \
   --max-model-len 12000 \
   --max-num-seqs 256 \
-  --enable-chunked-prefill=False \
+  --no-enable-chunked-prefill \
   --block-size 64 \
   --compilation-config '{"cudagraph_mode": "FULL_DECODE_ONLY", "pass_config": {"fuse_rope_kvcache": true}}'
