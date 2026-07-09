@@ -13,6 +13,7 @@ This repo contains scripts to run and benchmark `openai/gpt-oss-120b` on a singl
 | `setup_atom.sh` | Install ATOM from source on a ROCm PyTorch base image (not needed if you use `rocm/atom`) |
 | `benchmark_gptoss.py` | Single-stream 10K-in / 1.5K-out decode-throughput benchmark (works with ATOM and vLLM) |
 | `benchmark_atom.sh` | Convenience wrapper for `benchmark_gptoss.py` |
+| `profile_vllm.sh` | vLLM run with torch profiler enabled; produces a trace for `https://ui.perfetto.dev/` |
 | `benchmark_wafer.py` | Non-streaming raw-completions benchmark (legacy) |
 | `benchmark_chat.py` | Chat-completions benchmark (legacy, better for Eagle 3) |
 | `start_server.sh` / `start_server_eagle3*.sh` | Legacy vLLM server scripts |
@@ -94,6 +95,16 @@ The benchmark matches the Artificial Analysis single-stream workload:
 - **ATOM_USE_TRITON_MOE=1 is required** on the 0.1.5 dev image to load GPT-OSS's native MXFP4 MoE weights on MI300X (gfx942). Without it, `_swizzle_mxfp4` asserts and `ModelRunner` dies during model initialization.
 - **Expected single-stream throughput on 1x MI300X:** unknown until measured; vLLM baseline was ~74 tok/s. Fireworks' 746 tok/s uses multi-GPU + custom kernels/speculative decoding and is not reproducible on a single MI300X with open-source tooling.
 - First model download is ~63GB and may take 10-30 minutes.
+
+## Profiling
+
+### vLLM → Perfetto
+
+Run `profile_vllm.sh`. It starts `vllm serve` with `--profiler-config` and the torch profiler, calls `/start_profile`, runs `benchmark_gptoss.py`, then `/stop_profile`. The resulting `.pt.trace.json.gz` in `/workspace/vllm_profile` can be opened in `https://ui.perfetto.dev/`. Profiling adds overhead; do not use it for final throughput numbers.
+
+### ATOM → Perfetto
+
+ATOM supports `ATOM_TORCH_PROFILER_DIR`. Set the env var before starting the server, run the benchmark, then stop the server and open the `.pt.trace.json.gz` in `https://ui.perfetto.dev/`.
 
 ## Troubleshooting
 
