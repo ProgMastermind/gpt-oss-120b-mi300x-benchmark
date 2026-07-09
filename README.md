@@ -14,7 +14,8 @@ This repo contains scripts to run and benchmark `openai/gpt-oss-120b` on a singl
 | `benchmark_gptoss.py` | Single-stream 10K-in / 1.5K-out decode-throughput benchmark (works with ATOM and vLLM) |
 | `benchmark_atom.sh` | Convenience wrapper for `benchmark_gptoss.py` |
 | `profile_vllm.sh` | vLLM run with torch profiler enabled; produces a trace for `https://ui.perfetto.dev/` |
-| `profile_atom.sh` | ATOM run with torch profiler enabled; produces a trace for `https://ui.perfetto.dev/` |
+| `profile_atom.sh` | ATOM run with torch profiler enabled (best config) |
+| `profile_atom_base.sh` | ATOM run with torch profiler enabled (base config, simpler to read) |
 | `benchmark_wafer.py` | Non-streaming raw-completions benchmark (legacy) |
 | `benchmark_chat.py` | Chat-completions benchmark (legacy, better for Eagle 3) |
 | `start_server.sh` / `start_server_eagle3*.sh` | Legacy vLLM server scripts |
@@ -105,7 +106,7 @@ Run `profile_vllm.sh`. It starts `vllm serve` with `--profiler-config` and the t
 
 ### ATOM → Perfetto
 
-Run `profile_atom.sh`. It starts `atom.entrypoints.openai_server` with `--torch-profiler-dir /workspace/atom_profile`, calls `/start_profile`, runs `benchmark_gptoss.py`, then `/stop_profile`. The resulting `.pt.trace.json.gz` is written under `/workspace/atom_profile/rank_0/` and can be opened in `https://ui.perfetto.dev/`.
+Run `profile_atom.sh` (best config) or `profile_atom_base.sh` (base config, simpler trace). Both start `atom.entrypoints.openai_server` with `--torch-profiler-dir`, call `/start_profile`, run `benchmark_gptoss.py`, then `/stop_profile`. The resulting `.pt.trace.json.gz` is written under `/workspace/atom_profile/rank_0/` or `/workspace/atom_profile_base/rank_0/` and can be opened in `https://ui.perfetto.dev/`.
 
 ## Troubleshooting
 
