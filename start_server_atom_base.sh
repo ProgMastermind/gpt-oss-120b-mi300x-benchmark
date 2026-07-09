@@ -11,6 +11,11 @@ export SAFETENSORS_FAST_GPU=1
 export HSA_NO_SCRATCH_RECLAIM=1
 export AMDGCN_USE_BUFFER_OPS=0
 
+# ATOM uses AITER Triton MoE kernels for GPT-OSS's native MXFP4 MoE weights on
+# MI300X (gfx942). Without this, _swizzle_mxfp4 fails its assertion during model
+# load and the ModelRunner dies.
+export ATOM_USE_TRITON_MOE=1
+
 mkdir -p "$HF_HOME"
 
 echo "Starting ATOM server (base config) for openai/gpt-oss-120b on port 8000..."

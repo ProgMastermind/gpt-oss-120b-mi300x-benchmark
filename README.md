@@ -90,5 +90,6 @@ The benchmark matches the Artificial Analysis single-stream workload:
   - `--no-enable_prefix_caching` (unique prompts, no cache benefit)
   - `--level 3` piecewise compilation
 - **ATOM CLI does not expose `--cudagraph-mode`**. The default for level 3 is `PIECEWISE`. The `FULL_AND_PIECEWISE` mode is the theoretical fastest for decode; `start_server_atom_best_full_graph.sh` enables it via a Python wrapper. If it crashes during CUDA graph capture, fall back to `start_server_atom_best.sh`.
+- **ATOM_USE_TRITON_MOE=1 is required** to load GPT-OSS's native MXFP4 MoE weights on MI300X (gfx942). Without it, `_swizzle_mxfp4` asserts and `ModelRunner` dies during model initialization.
 - **Expected single-stream throughput on 1x MI300X:** unknown until measured; vLLM baseline was ~74 tok/s. Fireworks' 746 tok/s uses multi-GPU + custom kernels/speculative decoding and is not reproducible on a single MI300X with open-source tooling.
 - First model download is ~63GB and may take 10-30 minutes.
