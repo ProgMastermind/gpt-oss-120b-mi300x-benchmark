@@ -51,6 +51,7 @@ The benchmark matches the Artificial Analysis single-stream workload:
 
 ## Important Notes
 
-- Eagle 3 speculative decoding is **not verified** for gpt-oss on AMD/ROCm. The baseline config above uses AITER + CUDA graphs.
+- **Expected single-stream throughput on 1x MI300X:** ~70-100 tok/s without speculative decoding. Chinmay Hebbal's MI300X benchmark reports ~63 tok/s per stream for gpt-oss-120b. Fireworks' 746 tok/s uses Eagle 3 speculative decoding + custom CUDA kernels, which is **not available on AMD/ROCm for gpt-oss-120b**.
 - `FP8 KV cache` is not recommended for gpt-oss due to sliding-window attention layers.
 - First model download is ~63GB and may take 10-30 minutes.
+- The optimized config uses `ROCM_AITER_FA`, `FULL_DECODE_ONLY` CUDA graphs, and disables chunked prefill for better single-GPU decode performance.
