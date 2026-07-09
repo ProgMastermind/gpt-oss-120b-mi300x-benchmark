@@ -38,8 +38,8 @@ NUM_RUNS = 5
 def make_messages(tag: str):
     long_text = f"{tag}: " + BASE_TEXT * REPEATS + f" End marker {tag}."
     return [
-        {"role": "system", "content": "You are a helpful assistant. Provide a detailed summary of the user's text."},
-        {"role": "user", "content": f"Please summarize the following text in detail:\n\n{long_text}"}
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": f"Continue the following text in great detail. Expand on the ideas, provide historical context, and explore the implications:\n\n{long_text}"}
     ]
 
 
@@ -58,6 +58,7 @@ def send_streaming_chat_request(messages):
         "max_tokens": OUTPUT_TOKENS,
         "temperature": 0.1,
         "top_p": 0.9,
+        "ignore_eos": True,
         "stream": True,
         "stream_options": {"include_usage": True},
     }
