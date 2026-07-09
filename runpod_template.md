@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Container image | `rocm/atom:latest` |
+| Container image | `rocm/atom-dev:atom0.1.5-aiter0.1.16` |
 | Container start command (JSON) | `{"entrypoint": ["/bin/bash"], "cmd": ["-c", "sleep infinity"]}` |
 | Container disk | 50 GB |
 | Volume disk | 150 GB |
@@ -13,6 +13,8 @@
 | Expose TCP ports | `22` |
 
 ATOM is pre-installed and the `python -m atom.entrypoints.openai_server` command is available.
+
+> **Important:** The `rocm/atom:latest` (atom 0.1.4) and `rocm/atom:rocm7.2.4_..._atom0.1.4` tags have a known ATOM/AITER mismatch that causes `ImportError: cannot import name 'swizzle_scales' from 'aiter.ops.triton.moe.moe_op_gemm_a8w4'` when loading GPT-OSS. Use the paired `rocm/atom-dev:atom0.1.5-aiter0.1.16` image instead.
 
 ## Option B: ROCm PyTorch Base Image
 
