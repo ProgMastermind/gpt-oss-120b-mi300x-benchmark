@@ -47,8 +47,12 @@ if [[ -f "$PATCH_FILE" ]]; then
     if git apply --check "$PATCH_FILE" 2>/dev/null; then
         git apply "$PATCH_FILE"
         LOG "Patch applied successfully."
+    elif git apply --reverse --check "$PATCH_FILE" 2>/dev/null; then
+        LOG "Patch already applied. Skipping."
     else
-        WARN "Patch already applied or does not apply cleanly. Skipping."
+        ERR "Patch does not apply cleanly. Check that AITER_DIR points to a clean v0.1.17-rc0 checkout."
+        git apply --check "$PATCH_FILE" || true
+        exit 1
     fi
 else
     WARN "aiter_gfx942.patch not found. Assuming aiter is already patched."
