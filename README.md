@@ -18,39 +18,36 @@ Single-stream benchmark and profiling results for `openai/gpt-oss-120b` on one A
 - **Output:** 1,500 tokens
 - **Concurrency:** 1
 - **Metric:** Median decode throughput (output tokens / decode time, excluding TTFT)
+- **Benchmark script:** `benchmark_gptoss.py` (single-stream 10K-in / 1.5K-out)
 
 ## Benchmark Results
 
 Single-stream `openai/gpt-oss-120b` on 1x MI300X:
 
-| Engine | Image | Config | Throughput (tok/s) | Notes |
-|--------|-------|--------|-------------------|-------|
-| vLLM 0.24.0 | `vllm/vllm-openai-rocm:v0.24.0` | AITER unified attention, full/piecewise CUDA graphs, `--gpu-memory-utilization 0.85`, `--max-num-seqs 256` | ~74 | Baseline without profiling |
-| vLLM 0.24.0 | `vllm/vllm-openai-rocm:v0.24.0` | Same as baseline + torch profiler | ~67.8 | Profiling overhead lowers throughput |
-| vLLM 0.24.0 | `vllm/vllm-openai-rocm:v0.24.0` | Best speculative-decoding run (Eagle 3) | ~81 | Unstable; not reproducible as a steady state |
-| vLLM 0.24.0 | `vllm/vllm-openai-rocm:v0.24.0` | Eagle 3 with other draft models (RedHatAI, Nebius, NVIDIA) | slower than baseline | Mostly detrimental; did not improve on 1x MI300X |
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | **base** (official recipe) | 194.6 | Best stable baseline on 1x MI300X |
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | **best + full graph** (`FULL_AND_PIECEWISE` decode graphs) | 196.1 | Small gain over base |
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | **best CLI** (piecewise CUDA graphs) | 200.6 | Highest measured stable throughput |
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | **base** with profiling enabled | 167.6 | Profiling overhead lowers throughput |
+| Engine | Config | Throughput (tok/s) | Notes |
+|--------|--------|-------------------|-------|
+| vLLM 0.24.0 | AITER unified attention, full/piecewise CUDA graphs, `--gpu-memory-utilization 0.85`, `--max-num-seqs 256` | ~74 | Baseline without profiling |
+| vLLM 0.24.0 | Same as baseline + torch profiler | ~67.8 | Profiling overhead lowers throughput |
+| vLLM 0.24.0 | Best speculative-decoding run (Eagle 3) | ~81 | Unstable; not reproducible as a steady state |
+| vLLM 0.24.0 | Eagle 3 with other draft models (RedHatAI, Nebius, NVIDIA) | slower than baseline | Mostly detrimental; did not improve on 1x MI300X |
+| ATOM 0.1.5 | **base** (official recipe) | 194.6 | Best stable baseline on 1x MI300X |
+| ATOM 0.1.5 | **best + full graph** (`FULL_AND_PIECEWISE` decode graphs) | 196.1 | Small gain over base |
+| ATOM 0.1.5 | **best CLI** (piecewise CUDA graphs) | 200.6 | Highest non-spec throughput |
+| ATOM 0.1.5 | **base** with profiling enabled | 167.6 | Profiling overhead lowers throughput |
+| ATOM 0.1.5 | **no Eagle3** (base model, `benchmark_gptoss.py`) | 209.5 | True baseline with same benchmark script |
+| ATOM 0.1.5 | **Eagle3** `num_spec=1`, `nvidia/gpt-oss-120b-Eagle3-throughput` | **291.6** | Best stable throughput; +39% over no-spec baseline |
+| ATOM 0.1.5 | **Eagle3** `num_spec=2` | 275.9 | Worse than `num_spec=1`; higher variance |
+| ATOM 0.1.5 | **Eagle3** `num_spec=1` + Triton fusion flags | 290.2 | No gain; fusion flags are no-ops on single GPU |
 
-### Eagle3 speculative decoding (ATOM + aiter v0.1.16.post3)
+### Key takeaway
 
-| Engine | Image | Config | Throughput (tok/s) | Notes |
-|--------|-------|--------|-------------------|-------|
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | Eagle3, `num_spec=1`, `nvidia/gpt-oss-120b-Eagle3-throughput`, `--level 3` | **291.6** | Best stable throughput; +45% over ATOM best CLI |
-| ATOM 0.1.5 | `rocm/atom-dev:atom0.1.5-aiter0.1.16` | Same, without `ATOM_USE_TRITON_MOE=1` | 208.4 | Triton MoE kernel is the key enabler |
+Eagle3 speculative decoding with `num_spec=1` is the single biggest optimization for GPT-OSS-120b on MI300X:
 
-### DigitalOcean AMD Developer Cloud (MI300X, `rocm/atom` image)
+- **+39% over no-spec baseline** (209.5 → 291.6 tok/s)
+- **+45% over ATOM best CLI** (200.6 → 291.6 tok/s)
+- **~3.9x faster than vLLM baseline** (74 → 291.6 tok/s)
 
-| Engine | Image | Config | Throughput (tok/s) | Notes |
-|--------|-------|--------|-------------------|-------|
-| ATOM 0.1.5 | `rocm/atom:rocm7.2.4_ubuntu24.04_py3.12_pytorch_release_2.10.0_atom0.1.4_202607091539` | Eagle3, `num_spec=1`, `nvidia/gpt-oss-120b-Eagle3-throughput`, `--level 3`, `ATOM_USE_TRITON_MOE=1` | **291.6** | Matches RunPod result on same image + aiter v0.1.16.post3 |
-| ATOM pr branch | `rocm/pytorch:rocm7.2.4_ubuntu24.04_py3.12_pytorch_release_2.10.0` | Eagle3, `num_spec=1`, aiter main (not v0.1.16.post3) | 158.5 | `aiter main` less tuned for gfx942; `shuffle_scale_moe` patch needed |
-
-ATOM on the paired `0.1.5` image is ~2.5-2.7x faster than the stable vLLM 0.24.0 baseline on the same single-MI300X setup. Speculative decoding on vLLM for this model on ROCm did not yield a stable improvement.
-
-With Eagle3 speculative decoding and `ATOM_USE_TRITON_MOE=1`, ATOM reaches **~292 tok/s** — a **~45% improvement** over the non-speculative ATOM best CLI (200.6 tok/s) and **~3.9x faster** than vLLM baseline.
+`num_spec=2` hurts throughput due to higher draft rejection rate. Triton kernel fusion flags (`ATOM_LLAMA_ENABLE_AITER_TRITON_FUSED_RMSNORM_QUANT`, `ATOM_LLAMA_ENABLE_AITER_TRITON_FUSED_SILU_MUL_QUANT`, `ATOM_ENABLE_ALLREDUCE_RMSNORM_FUSION`) are no-ops on single GPU and do not improve throughput.
 
 ## Profiling Results
 
@@ -66,15 +63,6 @@ With Eagle3 speculative decoding and `ATOM_USE_TRITON_MOE=1`, ATOM reaches **~29
 | CPU operations | `cpu_op` (all ATen ops) | 2.47 | 593,251 |
 
 The main bottleneck is **host-to-device memory copies and CPU/GPU synchronization**, not the MoE or attention compute itself. The attention kernel takes only 2.77 s, while the MoE GEMM takes 18.69 s; the much larger consumers are `Memcpy HtoD` (65.46 s) and `hipEventSynchronize` (34.35 s).
-
-## Files
-
-- `start_server_atom_base.sh` / `start_server_atom_best.sh` / `start_server_atom_best_full_graph.sh` — ATOM server configs
-- `start_server.sh` / `start_server_eagle3*.sh` — legacy vLLM server configs
-- `benchmark_gptoss.py` — single-stream 10K-in / 1.5K-out decode benchmark
-- `profile_atom.sh` / `profile_atom_base.sh` / `profile_atom_manual.sh` / `start_server_atom_profile.sh` — ATOM profiling scripts
-- `profile_vllm.sh` — vLLM profiling script
-- `runpod_template.md` — RunPod template with images and entry commands
 
 ## Eagle3 speculative decoding setup
 
@@ -98,14 +86,13 @@ The Eagle3 support required three changes to ATOM source code:
 
 | Variable | Value | Purpose |
 |----------|-------|---------|
-| `ATOM_USE_TRITON_MOE` | `1` | Use Triton MoE kernels for GPT-OSS-120b MoE layers. Without this, throughput drops from ~292 to ~208 tok/s. |
 | `HSA_NO_SCRATCH_RECLAIM` | `1` | Prevents ROCm scratch buffer reclaim overhead. |
 | `NCCL_P2P_DISABLE` | `1` | Disables NCCL P2P on single-GPU (avoids unnecessary overhead). |
 | `AITER_LOG_LEVEL` | `WARNING` | Suppresses aiter kernel log flooding. |
 | `HF_HOME` | `/root/huggingface_cache` | Model download location (avoids root disk filling up). |
 | `HF_HUB_DISABLE_XET` | `1` | Disables xet download backend (avoids ENOSPC errors). |
 
-### Server command
+### Server command (with Eagle3)
 
 ```bash
 python -m atom.entrypoints.openai_server \
@@ -118,12 +105,22 @@ python -m atom.entrypoints.openai_server \
   --level 3
 ```
 
+### Server command (without Eagle3, baseline)
+
+```bash
+python -m atom.entrypoints.openai_server \
+  --model openai/gpt-oss-120b \
+  --kv_cache_dtype fp8 \
+  --gpu-memory-utilization 0.5 \
+  --level 3
+```
+
 ### aiter version
 
-- **`v0.1.16.post3`** (tuned for gfx942/MI300X) — gives ~292 tok/s.
-- **`main`** (less tuned for gfx942, requires `shuffle_scale_moe` patch) — gives ~158 tok/s on `rocm/pytorch` image.
+- **`v0.1.16.post3`** (tuned for gfx942/MI300X) — recommended, gives ~292 tok/s with Eagle3.
+- **`main`** — less tuned for gfx942; CK MoE path crashes with LLVM error on MI300X.
 
-### Benchmark result (5 runs, 2026-07-15)
+### Benchmark result — Eagle3 `num_spec=1` (5 runs, 2026-07-15)
 
 ```
 Run 1: 9592 in, 1500 out, 6.02s total, 0.923s TTFT, 5.10s decode, 294.2 tok/s
@@ -136,6 +133,29 @@ Average decode throughput: 291.6 tok/s
 Median decode throughput:  294.2 tok/s
 Min/Max:                   280.2 / 301.7 tok/s
 ```
+
+### Benchmark result — no Eagle3 baseline (5 runs, 2026-07-15)
+
+```
+Run 1: 9592 in, 1500 out, 8.06s total, 0.908s TTFT, 7.15s decode, 209.7 tok/s
+Run 2: 9592 in, 1500 out, 8.07s total, 0.907s TTFT, 7.16s decode, 209.5 tok/s
+Run 3: 9592 in, 1500 out, 8.07s total, 0.908s TTFT, 7.16s decode, 209.4 tok/s
+Run 4: 9592 in, 1500 out, 8.07s total, 0.907s TTFT, 7.17s decode, 209.3 tok/s
+Run 5: 9592 in, 1500 out, 8.07s total, 0.906s TTFT, 7.17s decode, 209.3 tok/s
+
+Average decode throughput: 209.5 tok/s
+Median decode throughput:  209.4 tok/s
+Min/Max:                   209.3 / 209.7 tok/s
+```
+
+## Files
+
+- `start_server_atom_base.sh` / `start_server_atom_best.sh` / `start_server_atom_best_full_graph.sh` — ATOM server configs
+- `start_server.sh` / `start_server_eagle3*.sh` — legacy vLLM server configs
+- `benchmark_gptoss.py` — single-stream 10K-in / 1.5K-out decode benchmark
+- `profile_atom.sh` / `profile_atom_base.sh` / `profile_atom_manual.sh` / `start_server_atom_profile.sh` — ATOM profiling scripts
+- `profile_vllm.sh` — vLLM profiling script
+- `runpod_template.md` — RunPod template with images and entry commands
 
 ## Core Contributor
 
