@@ -177,7 +177,9 @@ fi
 # The patcher is idempotent and verifies all 4 edits.
 PATCHER="/root/ATOM/scripts/apply_input_norm_fix.py"
 if [[ ! -f "$PATCHER" ]]; then
-    # Patcher lives in our scripts dir — copy it in if not part of ATOM repo
+    PATCHER="/root/benchmark-scripts/scripts/apply_input_norm_fix.py"
+fi
+if [[ ! -f "$PATCHER" ]]; then
     PATCHER="/root/apply_input_norm_fix.py"
 fi
 if [[ -f "$PATCHER" ]]; then
